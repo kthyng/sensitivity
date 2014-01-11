@@ -1,0 +1,124 @@
+\documentclass[11pt]{article}
+\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+\geometry{letterpaper}                   % ... or a4paper or a5paper or ... 
+%\geometry{landscape}                % Activate for for rotated page geometry
+%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{cancel} % for "goes to zero" strike-throughs
+\usepackage{epstopdf}
+\usepackage{amsmath}
+\usepackage{subfigure}
+\usepackage{ esint } % for multi-dimensional integrals
+\usepackage{natbib} % for better bibliography referencing. \citet without parentheses and \citep with them
+\usepackage[colorlinks=true, pdfstartview=FitV, linkcolor=black, 
+             citecolor=black, urlcolor=black]{hyperref}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\title{Sensitivity Study for TracPy on the Texas-Louisiana shelf}
+\author{Kristen M. Thyng}
+%\date{}                                           % Activate to display a given date or no date
+
+\begin{document}
+% \input{../../LatexFiles/macros}
+\maketitle
+
+% \abstract{}
+
+% \tableofcontents
+
+
+My goal in this sensitivity study is to make an informed decision about how to initialize drifters to best capture dynamics in the TXLA model using TracPy. From the horizontal\_diffusion project, I have already decided on the what diffusion scheme and horizontal diffusivity to use (\verb+doturb=2+ and $A_H=5$ m$^2$s$^{-1}$). Here we examine the effect of the horizontal initial separation distance and the maximum volume transport represented by a drifter for surface drifters. The metrics for the effect are
+\begin{itemize}
+	\item Cloud statistics: use the 1st, 2nd, and 3rd moments of the cloud of particles at the end of the simulation. These moments, in the $x$-direction, are defined as:
+	\begin{itemize}
+		\item 1st moment (mean): $M_{1,x} = \frac{1}{N}\sum^{N}_{i=1} \left[x_i(t) - x_i(0)\right]$
+		\item 2nd moment (variance): $M_{2,x} = \frac{1}{N-1}\sum^{N}_{i=1} \left[ x_i(t) - x_i(0) - M_{1,x}(t)\right]^2$
+		\item 3rd moment (skewness): $M_{3,x} = \frac{ \frac{1}{N}\sum_i \left[ x_i(t) - M_{1,x} \right]^3}{\left[ \frac{1}{N} \sum \left[x_i(t)-M_{1,x}(t)\right]^2\right]^{3/2}}$,
+	\end{itemize}
+	for $N$ the number of drifters active in the simulation, and $x_i$ drifter $i$'s $x$ position at time $t$. From these moments, we calculate the deviation of the moment of a lower resolution simulation from the highest resolution simulation, in time. In the plots presented, this value is shown at the end of the simulation period.
+
+	\item Change in transport: Take the Frobenius norm of the difference of the maps of transport saved at the end of the simulations and the highest resolution case. That is, the difference in the map of transport in a lower resolution case and the highest resolution case, is given by $\text{diff} = ||T-T_C||$, where $T$ is the magnitude of the transport in space over the whole numerical domain at the end of the simulation and $T=\sqrt{U^2+V^2}$ for the directional transport $U$ and $V$, which are output by TRACMASS. $T_C$ is the transport magnitude for the high resolution case. The Frobenius norm is indicated by $||\cdot||$.
+\end{itemize}
+
+Consistent simulation parameters are given in Table \ref{tab:params}.
+
+\begin{table}
+\centering
+\begin{tabular}{ccccccc}
+	ndays & doturb & $A_H$ & nsteps & N & ff & do3d\\
+	7     & 2      & 5     & 8      & 8 & 1  & 0
+\end{tabular}
+\caption{Consistent simulation parameters}
+\label{tab:params}
+\end{table}
+
+Altered seeding parameters for these simulations are given in Table \ref{tab:seeding_params}. Note that these are not independent parameters since changing the initial separation distance may alter the number of drifters starting in a grid cell, which affects the number of drifters splitting the initial volume transport and therefore the max volume transport represented by those drifters. However, after $\Delta x$ is used to set initial drifter locations in these simulations, $V$ is checked for the existing drifter layout, and the number of drifters starting at a location is increased if the initial volume transport represented by the drifters in a cell is greater than $V$.
+
+\begin{table}
+\centering
+\begin{tabular}{ccccccccccc}
+	$\Delta x$ [m] & 250 & 500 & 750 & 1000 & 2500 & 5000 & 7500 & 10000 & 150000 & 20000 \\
+	$V$ [m$^3$s$^{-1}$] & 25 & 50 & 75 & 100 & ~ & ~ & ~ & ~ & ~ & ~ \\
+\end{tabular}
+\caption{Altered simulation choices. $\Delta x$ is the initial drifter separation distance in meters and $V$ is the maximum initial volume transport that any given drifter is allowed to represent.}
+\label{tab:seeding_params}
+\end{table}
+
+\subsection*{Seeding areas}
+
+The seeding areas are shown in Figure \ref{fig:areas} and are meant to represent a variety of flow regimes within the TXLA model domain. Plots of the changes being made between simulations are illustrated in Figure \ref{fig:examples} for changing $\Delta x$ and $V$, showing drifter tracks and transport.
+
+\begin{figure}
+	\centering
+	\subfigure[A]{\includegraphics[width=.32\textwidth]{figures/A_dx250_V25tracks}}
+	\subfigure[B]{\includegraphics[width=.32\textwidth]{figures/B_dx250_V25tracks}}
+	\subfigure[C]{\includegraphics[width=.32\textwidth]{figures/C_dx250_V25tracks}}
+	\caption{Three test areas}
+	\label{fig:areas}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\subfigure[Tracks: $\Delta x=1000$, $V=25$]{\includegraphics[width=.47\textwidth]{figures/A_dx1000_V25tracks}}
+	\subfigure[Tracks: $\Delta x=10000$, $V=100$]{\includegraphics[width=.47\textwidth]{figures/A_dx10000_V100tracks}}\\
+	\subfigure[Transport: $\Delta x=1000$, $V=25$]{\includegraphics[width=.47\textwidth]{figures/A_dx1000_V25transport}}
+	\subfigure[Transport: $\Delta x=10000$, $V=100$]{\includegraphics[width=.47\textwidth]{figures/A_dx10000_V100transport}}
+	\caption{Two different seed area A initializations in different views. But is one ``good enough''?}
+	\label{fig:examples}
+\end{figure}
+
+\subsection*{Transport}
+
+Given that there must be a choice for some discrete number of drifters to be used in a simulation, it seems reasonable to choose the seeding parameters that give the biggest increases in performance while using the fewest number of drifters. Figure \ref{fig:transport} shows contours of the norm of the transport difference and the number of drifters as functions of the seeding parameters, $\Delta x$ and $V$.
+
+We want to use the minimum suggested by the three seed areas, based our choice on which is the most difficult area to reproduce. Seed area A has the worst performance of the three seed areas, so we will focus on it for the transport metric. We want to decrease $\Delta x$ as long as the improvement in the difference in the norms is large enough to justify the increase in number of drifters required, indicated by black lines that are close together. Simultaneously, we want to use the fewest drifters, so we want red lines to be farther apart. This point for seed area A is roughly at $\Delta x=1000$ and $V=100$, for which the test simulation give diff=17500 using 3000 drifters. This seed choice will give even better performance in the other seeding areas.
+
+\begin{figure}
+	\centering
+	\subfigure[A]{\includegraphics[width=.85\textwidth]{figures/Atransport.pdf}}
+	\subfigure[B]{\includegraphics[width=.85\textwidth]{figures/Btransport.pdf}}
+	\subfigure[C]{\includegraphics[width=.85\textwidth]{figures/Ctransport.pdf}}
+	\caption{Norm of the difference of transport magnitude between a given case and the highest resolution case (black) and number of drifters in a simulation (red) as functions of the seeding parameters $\Delta x$ and $V$.}
+	\label{fig:transport}
+\end{figure}
+
+\subsection*{Cloud Statistics}
+
+Like in the case of the transport metric, seed area A has the most extreme performance values, so the other seed areas are not shown, with the understanding that they will have better performance for whatever choice is made based on seed area A. Figure \ref{fig:AM1} shows the 1st moment after 7 days of simulation as a function of initial drifter separation (black) and also the number of drifters in each simulation (red). $V$ is not varied for this comparison because it changes the character of the cloud, so $V=100$ was chosen to coincide with the results in the previous section. The 2nd and 3rd moments are not shown because they have the same behavior as the 1st moment.
+
+Results show that $\Delta x=1000$ gives reasonable performance for the moments of the drifter cloud.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{figures/AM1deviation.pdf}
+	\caption{1st moment deviation calculation for seed area A (black) and number of drifters in a simulation (red) as functions of the seeding parameter $\Delta x$. The 2nd and 3rd moments have the same shape and are not shown. $V=100$ for these simulations.}
+	\label{fig:AM1}
+\end{figure}
+
+\subsection*{Conclusions}
+
+Use $\Delta x=1000$ m initial separation and add on drifters to grid cells at existing seed locations such that the maximum initial volume transport represented by any given drifter is $V=$100 m$^3$s$^{-1}$.
+
+
+\end{document}  
